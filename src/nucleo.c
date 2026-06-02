@@ -3,7 +3,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-/* Variáveis globais do núcleo */
 PTR_DESC_PROC prim = NULL;
 PTR_DESC_PROC atual = NULL;
 
@@ -11,11 +10,9 @@ static descritor main_desc;
 static PTR_DESC main_ctx = &main_desc;
 static int main_ready = 0;
 
-/* Forward declarations */
 static void processo_trampolim(void *arg);
 static PTR_DESC_PROC proximo_ativo_depois(PTR_DESC_PROC a_partir);
 
-/* Função trampolim que envolve o código do processo */
 static void processo_trampolim(void *arg) {
   PTR_DESC_PROC processo_desc = (PTR_DESC_PROC)arg;
   if (processo_desc != NULL && processo_desc->codigo != NULL) {
@@ -24,13 +21,11 @@ static void processo_trampolim(void *arg) {
   }
 }
 
-/* Inicializa a fila circular de prontos */
 void inicia_fila_prontos(void) {
   prim = NULL;
   atual = NULL;
 }
 
-/* Cria um novo processo e o insere na fila circular */
 void cria_processo(void (*end_proc)(void), const char *nome_p) {
   PTR_DESC_PROC novo_proc = (PTR_DESC_PROC)malloc(sizeof(DESCRITOR_PROC));
   if (!novo_proc) {
@@ -48,7 +43,7 @@ void cria_processo(void (*end_proc)(void), const char *nome_p) {
 
   if (prim == NULL) {
     prim = novo_proc;
-    novo_proc->prox_desc = novo_proc; /* fila circular */
+    novo_proc->prox_desc = novo_proc;
   } else {
     PTR_DESC_PROC ultimo = prim;
     while (ultimo->prox_desc != prim) {
@@ -59,7 +54,6 @@ void cria_processo(void (*end_proc)(void), const char *nome_p) {
   }
 }
 
-/* Busca o próximo processo em estado ATIVO a partir de um ponto */
 static PTR_DESC_PROC proximo_ativo_depois(PTR_DESC_PROC a_partir) {
   if (prim == NULL)
     return NULL;
@@ -76,15 +70,13 @@ static PTR_DESC_PROC proximo_ativo_depois(PTR_DESC_PROC a_partir) {
     iter = iter->prox_desc;
   }
 
-  /* Verifica o próprio ponto de partida */
   if (a_partir->estado == ATIVO) {
     return a_partir;
   }
 
-  return NULL; /* nenhum processo ativo encontrado */
+  return NULL;
 }
 
-/* Cede voluntariamente a CPU para outro processo */
 void yield(void) {
   PTR_DESC_PROC prox;
 
@@ -100,7 +92,6 @@ void yield(void) {
   }
 }
 
-/* Termina o processo atual */
 void termina_processo(void) {
   PTR_DESC_PROC antigo;
   PTR_DESC_PROC prox;
@@ -126,7 +117,6 @@ void termina_processo(void) {
   }
 }
 
-/* Inicia o sistema multitarefa */
 void dispara_sistema(void) {
   if (prim == NULL) {
     return;
@@ -147,4 +137,28 @@ void dispara_sistema(void) {
     fprintf(stderr, "Erro: nenhum processo ativo encontrado.\n");
     exit(1);
   }
+}
+
+void deleta_fila_processos(void) {
+  if (prim == NULL)
+    return;
+
+  PTR_DESC_PROC iter = prim;
+  PTR_DESC_PROC temp;
+
+  do {
+    temp = iter->prox_desc;
+    
+    if (iter->contexto != NULL) {
+      deleta_desc(iter->contexto);
+      iter->contexto = NULL;
+    }
+
+    free(iter);
+
+    iter = temp;
+  } while (iter != prim);
+
+  prim = NULL;
+  atual = NULL;
 }

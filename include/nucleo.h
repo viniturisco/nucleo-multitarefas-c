@@ -14,16 +14,15 @@ typedef struct desc_p {
 } DESCRITOR_PROC;
 typedef DESCRITOR_PROC *PTR_DESC_PROC;
 
-/* Variáveis globais do núcleo */
 extern PTR_DESC_PROC prim;
 extern PTR_DESC_PROC atual;
 
-/* Funções do núcleo */
 void inicia_fila_prontos(void);
 void cria_processo(void (*end_proc)(void), const char *nome_p);
 void dispara_sistema(void);
 void yield(void);
 void termina_processo(void);
+void deleta_fila_processos(void);
 static PTR_DESC_PROC proximo_ativo_depois(PTR_DESC_PROC a_partir);
 
 #endif
